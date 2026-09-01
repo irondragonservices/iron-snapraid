@@ -38,12 +38,35 @@ writable by that uid.
 
 ```sh
 cosign verify ghcr.io/irondragonservices/iron-snapraid:14 \
-  --certificate-identity-regexp '^https://github.com/irondragonservices/' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+  --certificate-identity-regexp '^https://github\.com/irondragonservices/\.github/\.github/workflows/image-(release|refresh)\.yml@refs/heads/main$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-github-workflow-repository irondragonservices/iron-snapraid
 ```
+
+Be precise about the identity. The signature is produced by the shared
+reusable workflow in
+[irondragonservices/.github](https://github.com/irondragonservices/.github),
+not by a workflow in this repository, so the certificate names *that* path.
+A looser pattern such as `^https://github.com/irondragonservices/` would
+accept a signature from any workflow in any repository in the organisation,
+which is a much weaker claim than it looks. The
+`--certificate-github-workflow-repository` flag is what ties the signature back
+to this repository.
+
+Both `image-release` and `image-refresh` sign: the nightly rebuild republishes
+when the package set has actually changed, and it signs what it pushes.
 
 ## Changes from upstream
 
+- **The base packages are now upgraded, not just added to.** The step commented
+  *update base system* only installed `ca-certificates`, so the image shipped
+  whatever the base image tag happened to contain. Distributions patch a
+  package well before they rebuild and republish the base image, so a digest
+  pin — which is what Renovate maintains — pins the *unpatched* set until
+  upstream gets round to a rebuild. `alpine:3.24.1` was carrying openssl
+  3.5.7-r0 with a fixed HIGH against it and 3.5.8-r0 already in the repository.
+  This is also what makes the nightly cache-free rebuild worth running: without
+  it, that job rebuilt the same packages every night and picked up nothing.
 - **SnapRAID is no longer built from a git submodule.** Upstream vendored
   `amadvance/snapraid` as a submodule pinned to whatever commit was checked in
   — no tag, no release, nothing that said which version the image contained,

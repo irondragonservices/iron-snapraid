@@ -1,5 +1,9 @@
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
 
+# Fail the whole pipeline on the first failure. Alpine's /bin/sh is busybox
+# ash, which is why the shell is named explicitly rather than left to sh.
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
 # The version and the checksum of the release tarball. Both move together: a
 # bump that changes only the version fails the build at the sha256sum check,
 # which is the direction that failure should go, and the error names the
@@ -20,7 +24,8 @@ RUN adduser -s /bin/true -u 1000 -D -h /snapraid app \
 
 # install the necessary build tools
 # hadolint ignore=DL3018
-RUN apk add --no-cache build-base make autoconf automake coreutils curl
+RUN apk upgrade --no-cache \
+  && apk add --no-cache build-base make autoconf automake coreutils curl
 
 WORKDIR /src
 
