@@ -24,7 +24,8 @@ RUN adduser -s /bin/true -u 1000 -D -h /snapraid app \
 
 # install the necessary build tools
 # hadolint ignore=DL3018
-RUN apk add --no-cache build-base make autoconf automake coreutils curl
+RUN apk upgrade --no-cache \
+  && apk add --no-cache build-base make autoconf automake coreutils curl
 
 WORKDIR /src
 
